@@ -19,32 +19,23 @@ def arp_scan(interface, ip_range):
 
     return devices
 
-def port_scan(target_ip, ports):
+def port_scan(target_ip, port):
     open_ports = []
-    for port in ports:
-        # Crear un paquete TCP
-        tcp_syn = IP(dst=target_ip) / TCP(dport=port, flags="S")
-
-        # Enviar el paquete y esperar la respuesta
-        response = sr1(tcp_syn, timeout=1, verbose=0)
-
-        # Verificar si el puerto está abierto
-        if response and response.haslayer(TCP) and response[TCP].flags == 18:
-            open_ports.append(port)
-
+    # Crear un paquete TCP para el puerto 8080
+    tcp_syn = IP(dst=target_ip) / TCP(dport=port, flags="S")
+    # Enviar el paquete y esperar la respuesta
+    response = sr1(tcp_syn, timeout=1, verbose=0)
+    # Verificar si el puerto 8080 está abierto
+    if response and response.haslayer(TCP) and response[TCP].flags == 18:
+        open_ports.append(port)
     return open_ports
 
 def detect_os(target_ip):
-    # Realizar un escaneo de puertos comunes y analizar las respuestas
-    open_ports = port_scan(target_ip, [22, 80, 443])  # Escanea los puertos SSH, HTTP y HTTPS
+    # No necesitas modificar esta función, ya que solo verifica si el puerto 8080 está abierto
+    open_ports = port_scan(target_ip, 8080)  # Solo escanea el puerto 8080
     os_info = "Unknown"
-
-    # Analizar las respuestas para determinar el sistema operativo
-    if 22 in open_ports:
-        os_info = "Linux/Unix"
-    elif 80 in open_ports or 443 in open_ports:
-        os_info = "Windows"
-
+    if 8080 in open_ports:
+        os_info = "Probablemente un servidor web"
     return os_info
 
 def main():
@@ -58,12 +49,12 @@ def main():
     for device in devices:
         print("IP:", device[0], "\tMAC:", device[1], "\tHostname:", device[2])
         
-        # Escanear los puertos TCP en el dispositivo
-        open_ports = port_scan(device[0], range(1, 1025))
+        # Escanear el puerto 8080 en el dispositivo
+        open_ports = port_scan(device[0], 8080)
         if open_ports:
-            print("Puertos abiertos:", open_ports)
+            print("Puerto 8080 abierto en el dispositivo.")
         else:
-            print("No se encontraron puertos abiertos.")
+            print("El puerto 8080 está cerrado en el dispositivo.")
         
         # Detectar el sistema operativo del dispositivo
         os_info = detect_os(device[0])
